@@ -2,5 +2,12 @@
 name = "disjoint-ranges"
 version = "0.1.0"
 edition = "2024"
+repository = "https://github.com/swizzard/disjoint-ranges"
+license = "MIT"
+homepage = "https://github.com/swizzard/disjoint-ranges"
+readme = "README.md"
+description = "Ranges with gaps"
+keywords = ["range", "ranges", "disjoint", "discontinuous"]
+categories = ["data-structures"]
 
 [dependencies]
