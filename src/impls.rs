@@ -1,7 +1,16 @@
-//! [Bounded] and [Stepped] implementations for standard numeric types.
+//! [Bounded] and [Stepped] implementations for standard numeric types
 //!
-//! Since `f32` and `f64` only implement `PartialOrd`, they only be used to construct
-//! [UnaryRange](crate::ranges::UnaryRange)s
+//! Integer types (`i/u8`, `i/u16`, `i/u32`, `i/u64`, `i/u128` `i/usize`) are [Bounded] by
+//! `T::MIN` and `T::MAX` and [Stepped] by `1`.
+//!
+//! Floating-point types (`f32`, `f64`) are [Bounded] by `T::NEG_INFINITY` and `T::INFINITY` and
+//! [Stepped] by `T::EPSILON`.
+//!
+//! [`char`] is [Bounded] by [`char::MIN`] and [`char::MAX`]. For [Stepped], [`char`] is
+//! incremented or decremented by `1u32` while ensuring the value remains a valid [`char`].
+//!
+//! Since `f32` and `f64` only implement `PartialOrd`, they can only be used to construct
+//! [UnaryRange](crate::ranges::UnaryRange)s.
 
 use crate::traits::{Bounded, Stepped};
 use std::cmp::{max, min};
@@ -194,7 +203,7 @@ impl Bounded for f32 {
     const MAX_VAL: f32 = std::f32::INFINITY;
 }
 impl Stepped for f64 {
-    const STEP: f64 = std::f64::INFINITY;
+    const STEP: f64 = std::f64::EPSILON;
 
     fn increment(&self) -> Self {
         self + Self::STEP

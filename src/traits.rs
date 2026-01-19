@@ -1,4 +1,10 @@
 //! Relevant traits
+//!
+//! [`Bounded`] and [`Stepped`] are already [implemented for standard numeric types](crate::impls).
+//! You're obviously welcome to implement these traits for your own custom types, but given that
+//! [`UnaryRange`](crate::ranges::UnaryRange) and [`DisjointRange`](crate::ranges::DisjointRange)
+//! both require `T: Copy + Clone + Bounded + Stepped` and `DisjointRange` additionally requires
+//! `T: Ord`, the space of available (distinct, meaningful) types is a bit limited. Maybe tuples?
 
 /// Trait for types with minimum and maximum values
 ///

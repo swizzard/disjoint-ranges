@@ -1,5 +1,9 @@
 # disjoint-ranges
 
+![docs.rs](https://img.shields.io/docsrs/disjoint-ranges)
+![Crates.io License](https://img.shields.io/crates/l/disjoint-ranges)
+
+
 ## What
 A library providing disjoint ranges, i.e. ranges with gaps in them.
 
@@ -38,3 +42,8 @@ assert!(!&range.contains(70));
 assert!(&range.contains(59));
 assert!(&range.contains(123))
 ```
+
+## Who
+[Sam Raker](https://swizzard.pizza "swizzard dot pizza")
+
+No LLMs or similar "AI" technologies have been used in the making of this library.
