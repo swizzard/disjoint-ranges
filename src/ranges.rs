@@ -305,52 +305,47 @@ where
         false
     }
 
-    /// Combine this `DisjointRange` with another, making sure the result
-    /// is ordered and merged
-    pub fn add_disjoint_range(self, other: DisjointRange<T>) -> Self {
-        let mut out = self.ranges;
-        out.extend(other.ranges);
-        DisjointRange::sort_ranges(&mut out);
-        DisjointRange::meld_ranges(&mut out);
-        Self { ranges: out }
+    /// Combine this `DisjointRange` with another, maintaining order and merging
+    pub fn add_disjoint_range(&mut self, other: DisjointRange<T>) {
+        self.ranges.extend(other.ranges);
+        DisjointRange::sort_ranges(&mut self.ranges);
+        DisjointRange::meld_ranges(&mut self.ranges);
     }
 
-    /// Add a [`UnaryRange`] to this `DisjointRange`, making sure the result
-    /// is ordered and merged
-    pub fn add_unary_range(self, to_add: UnaryRange<T>) -> Self {
+    /// Add a [`UnaryRange`] to this `DisjointRange`, maintaining order and merging
+    pub fn add_unary_range(&mut self, to_add: UnaryRange<T>) {
         let l = self.ranges.len();
-        let mut out = self.ranges;
+        // let mut out = self.ranges;
         let mut i = 0;
         let mut inserted = false;
         while i < l {
-            if to_add.low < out[i].low {
-                out.insert(i, to_add);
+            if to_add.low < self.ranges[i].low {
+                self.ranges.insert(i, to_add);
                 inserted = true;
                 break;
             }
             i += 1;
         }
         if !inserted {
-            out.push(to_add);
+            self.ranges.push(to_add);
         }
-        DisjointRange::meld_ranges(&mut out);
-        Self { ranges: out }
+        DisjointRange::meld_ranges(&mut self.ranges);
     }
 
-    /// Remove a [`UnaryRange`]('s worth of values) from this `DisjointRange`
-    pub fn subtract_unary_range(self, to_remove: UnaryRange<T>) -> Self {
+    /// Remove a [`UnaryRange`]('s worth of values) from this `DisjointRange`, maintaining order
+    /// and merging
+    pub fn subtract_unary_range(&mut self, to_remove: UnaryRange<T>) {
         let orig_len = self.ranges.len();
-        let mut out = self.ranges;
         let mut i = 0;
         while i < orig_len {
-            if out[i].low > to_remove.high {
+            if self.ranges[i].low > to_remove.high {
                 break;
-            } else if out[i].low <= to_remove.high || out[1].high >= to_remove.low {
-                let target = out.remove(i);
+            } else if self.ranges[i].low <= to_remove.high || self.ranges[1].high >= to_remove.low {
+                let target = self.ranges.remove(i);
                 if let Some(new_ranges) = target.without(to_remove) {
                     let insert_len = new_ranges.len();
                     for new_range in new_ranges.into_iter().rev() {
-                        out.insert(i, new_range);
+                        self.ranges.insert(i, new_range);
                     }
                     if insert_len == 2 {
                         break; // to_remove entirely contained w/in out[i], we can stop
@@ -359,7 +354,6 @@ where
             }
             i += 1;
         }
-        Self { ranges: out }
     }
 
     /// The complement (or "inverse") of this range
@@ -505,99 +499,99 @@ mod tests {
     }
     #[test]
     fn test_subtract_range_lowest_lower() {
-        let orig = DisjointRange::from_bounds_unchecked(vec![(0, 4), (6, 10), (12, 16)]);
+        let mut orig = DisjointRange::from_bounds_unchecked(vec![(0, 4), (6, 10), (12, 16)]);
         let o2 = orig.clone();
         let wo_range = UnaryRange::new_unchecked(0, 2);
-        let subtracted = orig.subtract_unary_range(wo_range);
-        assert_eq!(3, subtracted.ranges.len());
-        assert_eq!(UnaryRange { low: 3, high: 4 }, subtracted.ranges[0]);
-        assert_eq!(o2.ranges[1], subtracted.ranges[1]);
-        assert_eq!(o2.ranges[2], subtracted.ranges[2]);
+        orig.subtract_unary_range(wo_range);
+        assert_eq!(3, orig.ranges.len());
+        assert_eq!(UnaryRange { low: 3, high: 4 }, orig.ranges[0]);
+        assert_eq!(o2.ranges[1], orig.ranges[1]);
+        assert_eq!(o2.ranges[2], orig.ranges[2]);
     }
     #[test]
     fn test_subtract_unary_range_lowest_higher() {
-        let orig = DisjointRange::from_bounds_unchecked(vec![(0, 4), (6, 10), (12, 16)]);
+        let mut orig = DisjointRange::from_bounds_unchecked(vec![(0, 4), (6, 10), (12, 16)]);
         let o2 = orig.clone();
         let wo_range = UnaryRange::new_unchecked(2, 4);
-        let subtracted = orig.subtract_unary_range(wo_range);
-        assert_eq!(3, subtracted.ranges.len());
-        assert_eq!(UnaryRange { low: 0, high: 1 }, subtracted.ranges[0]);
-        assert_eq!(o2.ranges[1], subtracted.ranges[1]);
-        assert_eq!(o2.ranges[2], subtracted.ranges[2]);
+        orig.subtract_unary_range(wo_range);
+        assert_eq!(3, orig.ranges.len());
+        assert_eq!(UnaryRange { low: 0, high: 1 }, orig.ranges[0]);
+        assert_eq!(o2.ranges[1], orig.ranges[1]);
+        assert_eq!(o2.ranges[2], orig.ranges[2]);
     }
     #[test]
     fn test_subtract_unary_range_lowest_middle() {
-        let orig = DisjointRange::from_bounds_unchecked(vec![(0, 4), (6, 10), (12, 16)]);
+        let mut orig = DisjointRange::from_bounds_unchecked(vec![(0, 4), (6, 10), (12, 16)]);
         let o2 = orig.clone();
         let wo_range = UnaryRange::new_unchecked(2, 3);
-        let subtracted = orig.subtract_unary_range(wo_range);
-        assert_eq!(4, subtracted.ranges.len());
-        assert_eq!(UnaryRange { low: 0, high: 1 }, subtracted.ranges[0]);
-        assert_eq!(UnaryRange { low: 4, high: 4 }, subtracted.ranges[1]);
-        assert_eq!(o2.ranges[1], subtracted.ranges[2]);
-        assert_eq!(o2.ranges[2], subtracted.ranges[3]);
+        orig.subtract_unary_range(wo_range);
+        assert_eq!(4, orig.ranges.len());
+        assert_eq!(UnaryRange { low: 0, high: 1 }, orig.ranges[0]);
+        assert_eq!(UnaryRange { low: 4, high: 4 }, orig.ranges[1]);
+        assert_eq!(o2.ranges[1], orig.ranges[2]);
+        assert_eq!(o2.ranges[2], orig.ranges[3]);
     }
     #[test]
     fn test_subtract_unary_range_lower_spanning() {
-        let orig = DisjointRange::from_bounds_unchecked(vec![(0, 4), (6, 10), (12, 16)]);
+        let mut orig = DisjointRange::from_bounds_unchecked(vec![(0, 4), (6, 10), (12, 16)]);
         let o2 = orig.clone();
         let wo_range = UnaryRange::new_unchecked(4, 7);
-        let subtracted = orig.subtract_unary_range(wo_range);
-        assert_eq!(3, subtracted.ranges.len());
-        assert_eq!(UnaryRange { low: 0, high: 3 }, subtracted.ranges[0]);
-        assert_eq!(UnaryRange { low: 8, high: 10 }, subtracted.ranges[1]);
-        assert_eq!(o2.ranges[2], subtracted.ranges[2]);
+        orig.subtract_unary_range(wo_range);
+        assert_eq!(3, orig.ranges.len());
+        assert_eq!(UnaryRange { low: 0, high: 3 }, orig.ranges[0]);
+        assert_eq!(UnaryRange { low: 8, high: 10 }, orig.ranges[1]);
+        assert_eq!(o2.ranges[2], orig.ranges[2]);
     }
     #[test]
     fn test_add_unary_range_before_separate() {
-        let orig = DisjointRange::from_bounds_unchecked(vec![(4, 6), (8, 10)]);
+        let mut orig = DisjointRange::from_bounds_unchecked(vec![(4, 6), (8, 10)]);
         let o2 = orig.clone();
         let to_add = UnaryRange::new_unchecked(0, 2);
         let ta = to_add.clone();
-        let added = orig.add_unary_range(to_add);
-        assert_eq!(3, added.ranges.len());
-        assert_eq!(ta, added.ranges[0]);
-        assert_eq!(o2.ranges[0], added.ranges[1]);
-        assert_eq!(o2.ranges[1], added.ranges[2]);
+        orig.add_unary_range(to_add);
+        assert_eq!(3, orig.ranges.len());
+        assert_eq!(ta, orig.ranges[0]);
+        assert_eq!(o2.ranges[0], orig.ranges[1]);
+        assert_eq!(o2.ranges[1], orig.ranges[2]);
     }
     #[test]
     fn test_add_unary_range_before_merged() {
-        let orig = DisjointRange::from_bounds_unchecked(vec![(4, 6), (8, 10)]);
+        let mut orig = DisjointRange::from_bounds_unchecked(vec![(4, 6), (8, 10)]);
         let o2 = orig.clone();
         let to_add = UnaryRange::new_unchecked(0, 3);
-        let added = orig.add_unary_range(to_add);
-        assert_eq!(2, added.ranges.len());
-        assert_eq!(UnaryRange { low: 0, high: 6 }, added.ranges[0]);
-        assert_eq!(o2.ranges[1], added.ranges[1]);
+        orig.add_unary_range(to_add);
+        assert_eq!(2, orig.ranges.len());
+        assert_eq!(UnaryRange { low: 0, high: 6 }, orig.ranges[0]);
+        assert_eq!(o2.ranges[1], orig.ranges[1]);
     }
     #[test]
     fn test_add_unary_range_middle_separate() {
-        let orig = DisjointRange::from_bounds_unchecked(vec![(4, 5), (10, 11)]);
+        let mut orig = DisjointRange::from_bounds_unchecked(vec![(4, 5), (10, 11)]);
         let o2 = orig.clone();
         let to_add = UnaryRange::new_unchecked(7, 8);
         let ta = to_add.clone();
-        let added = orig.add_unary_range(to_add);
-        assert_eq!(3, added.ranges.len());
-        assert_eq!(o2.ranges[0], added.ranges[0]);
-        assert_eq!(ta, added.ranges[1]);
-        assert_eq!(o2.ranges[1], added.ranges[2]);
+        orig.add_unary_range(to_add);
+        assert_eq!(3, orig.ranges.len());
+        assert_eq!(o2.ranges[0], orig.ranges[0]);
+        assert_eq!(ta, orig.ranges[1]);
+        assert_eq!(o2.ranges[1], orig.ranges[2]);
     }
     #[test]
     fn test_add_unary_range_middle_merged() {
-        let orig = DisjointRange::from_bounds_unchecked(vec![(4, 5), (10, 11)]);
+        let mut orig = DisjointRange::from_bounds_unchecked(vec![(4, 5), (10, 11)]);
         let o2 = orig.clone();
         let to_add = UnaryRange::new_unchecked(6, 8);
-        let added = orig.add_unary_range(to_add);
-        assert_eq!(2, added.ranges.len());
-        assert_eq!(UnaryRange { low: 4, high: 8 }, added.ranges[0]);
-        assert_eq!(o2.ranges[1], added.ranges[1]);
+        orig.add_unary_range(to_add);
+        assert_eq!(2, orig.ranges.len());
+        assert_eq!(UnaryRange { low: 4, high: 8 }, orig.ranges[0]);
+        assert_eq!(o2.ranges[1], orig.ranges[1]);
     }
     #[test]
     fn test_add_unary_range_merge_all() {
-        let orig = DisjointRange::from_bounds_unchecked(vec![(4, 5), (10, 11)]);
+        let mut orig = DisjointRange::from_bounds_unchecked(vec![(4, 5), (10, 11)]);
         let to_add = UnaryRange::new_unchecked(6, 9);
-        let added = orig.add_unary_range(to_add);
-        assert_eq!(1, added.ranges.len());
-        assert_eq!(UnaryRange { low: 4, high: 11 }, added.ranges[0]);
+        orig.add_unary_range(to_add);
+        assert_eq!(1, orig.ranges.len());
+        assert_eq!(UnaryRange { low: 4, high: 11 }, orig.ranges[0]);
     }
 }
