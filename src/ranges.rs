@@ -156,7 +156,7 @@ where
     ///       low)   high)
     /// ```
     pub fn without(self, other: Self) -> Option<Vec<Self>> {
-        if other.low > self.high {
+        if other.low > self.high || other.high < self.low {
             Some(vec![self])
         } else if other.high >= self.high {
             if other.low.decrement() > self.low {
@@ -339,18 +339,14 @@ where
     /// Remove a [`UnaryRange`]('s worth of values) from this `DisjointRange`, maintaining order
     /// and merging
     pub fn subtract_unary_range(&mut self, to_remove: UnaryRange<T>) {
-        println!("to remove {:?}", to_remove);
         let orig_len = self.ranges.len();
         let mut i = 0;
         while i < orig_len {
-            println!("ranges {:?}", self.ranges);
             if self.ranges[i].low > to_remove.high {
                 break;
             } else if self.ranges[i].low <= to_remove.high || self.ranges[1].high >= to_remove.low {
                 let target = self.ranges.remove(i);
-                println!("target {:?}", target);
                 if let Some(new_ranges) = target.without(to_remove) {
-                    println!("new ranges {:?}", new_ranges);
                     let insert_len = new_ranges.len();
                     for new_range in new_ranges.into_iter().rev() {
                         self.ranges.insert(i, new_range);
@@ -630,7 +626,6 @@ mod tests {
     fn test_complement_disjoint() {
         let orig = DisjointRange::from_bounds_unchecked([(10u8, 50), (70, 100)]);
         let complement = orig.complement();
-        println!("complement {:?}", complement);
         assert_eq!(3, complement.ranges.len());
         assert_eq!(UnaryRange { low: 0, high: 9 }, complement.ranges[0]);
         assert_eq!(UnaryRange { low: 51, high: 69 }, complement.ranges[1]);
