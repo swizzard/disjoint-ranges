@@ -26,10 +26,10 @@ assert!(!&added.contains(45));
 assert!(&added.contains(85));
 assert!(&added.contains(95));
 
-let sub = range.subtract_unary_range(UnaryRange::new(40, 90));
-assert!(!&added.contains(45));
-assert!(!&added.contains(85));
-assert!(&added.contains(95));
+range.subtract_unary_range(UnaryRange::new(40, 90));
+assert!(!&range.contains(45));
+assert!(!&range.contains(85));
+assert!(&range.contains(95));
 
 // complement
 let range = DisjointRange::new_single_range(60u16, 120u16);
