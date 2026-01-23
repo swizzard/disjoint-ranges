@@ -81,6 +81,11 @@ where
         *val >= self.low && *val <= self.high
     }
 
+    /// Get `(low, high)`
+    pub fn as_bounds(&self) -> (T, T) {
+        (self.low, self.high)
+    }
+
     /// The current range without `other`
     ///
     /// This is like subtraction, but returns `Option<Vec<Self>>`.
