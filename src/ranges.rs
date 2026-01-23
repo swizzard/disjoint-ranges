@@ -40,6 +40,7 @@
 //!   `_unchecked` methods if you're willing to fly without a net.
 
 use std::cmp::{max, min};
+use std::collections::VecDeque;
 
 use crate::traits::{Bounded, Stepped, bounded_max, bounded_min};
 
@@ -181,7 +182,7 @@ where
 
 impl<T> UnaryRange<T>
 where
-    T: Ord + Copy + Clone + Bounded + Stepped + std::fmt::Debug,
+    T: Ord + Copy + Clone + Bounded + Stepped,
 {
     fn complement_ranges(self) -> Vec<UnaryRange<T>> {
         if self.low == bounded_min() && self.high == bounded_max() {
@@ -245,7 +246,7 @@ pub struct DisjointRange<T> {
 
 impl<T> DisjointRange<T>
 where
-    T: Copy + Clone + Ord + Bounded + Stepped + std::fmt::Debug,
+    T: Copy + Clone + Ord + Bounded + Stepped,
 {
     /// Create a new (contiguous) range with a single `low` and
     /// `high` value
@@ -381,6 +382,12 @@ where
         out
     }
 
+    /// Iterator over the contained ranges
+    pub fn ranges_iter(&self) -> RangesIter<T> {
+        let ranges = VecDeque::from(self.ranges.clone());
+        RangesIter { ranges }
+    }
+
     fn meld(&mut self) {
         DisjointRange::meld_ranges(&mut self.ranges);
     }
@@ -404,6 +411,19 @@ where
         }
     }
 }
+
+pub struct RangesIter<T> {
+    ranges: std::collections::VecDeque<UnaryRange<T>>,
+}
+
+impl<T> Iterator for RangesIter<T> {
+    type Item = UnaryRange<T>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.ranges.pop_front()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{DisjointRange, UnaryRange};

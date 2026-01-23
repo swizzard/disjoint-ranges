@@ -1,6 +1,6 @@
 [package]
 name = "disjoint-ranges"
-version = "0.2.2"
+version = "0.3.0"
 edition = "2024"
 repository = "https://github.com/swizzard/disjoint-ranges"
 license = "MIT"
