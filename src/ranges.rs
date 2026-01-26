@@ -319,7 +319,7 @@ where
     pub fn add_disjoint_range(&mut self, other: DisjointRange<T>) {
         self.ranges.extend(other.ranges);
         DisjointRange::sort_ranges(&mut self.ranges);
-        DisjointRange::meld_ranges(&mut self.ranges);
+        DisjointRange::meld_ranges_unchecked(&mut self.ranges);
     }
 
     /// Add a [`UnaryRange`] to this `DisjointRange`, maintaining order and merging
@@ -339,7 +339,7 @@ where
         if !inserted {
             self.ranges.push(to_add);
         }
-        DisjointRange::meld_ranges(&mut self.ranges);
+        DisjointRange::meld_ranges_unchecked(&mut self.ranges);
     }
 
     /// Remove a [`UnaryRange`]('s worth of values) from this `DisjointRange`, maintaining order
@@ -378,12 +378,12 @@ where
             .flat_map(UnaryRange::complement_ranges)
             .collect();
         DisjointRange::sort_ranges(&mut out);
-        DisjointRange::meld_ranges(&mut out);
+        DisjointRange::meld_ranges_unchecked(&mut out);
         let mut out = Self { ranges: out };
         for r in s.ranges.into_iter() {
             out.subtract_unary_range(r);
         }
-        out.meld();
+        DisjointRange::meld_ranges_unchecked(&mut out.ranges);
         out
     }
 
@@ -393,15 +393,18 @@ where
         RangesIter { ranges }
     }
 
-    fn meld(&mut self) {
-        DisjointRange::meld_ranges(&mut self.ranges);
-    }
-
-    fn sort_ranges(ranges: &mut Vec<UnaryRange<T>>) {
+    /// Sort a `Vec<UnaryRange<T>>` by (low)[`UnaryRange::low`] so that it
+    /// can be properly [melded](`DisjointRange::meld_ranges_unchecked`)
+    pub fn sort_ranges(ranges: &mut Vec<UnaryRange<T>>) {
         ranges.sort_by_cached_key(|UnaryRange { low, .. }: &UnaryRange<T>| *low);
     }
 
-    fn meld_ranges(ranges: &mut Vec<UnaryRange<T>>) {
+    /// Meld the contents of a `Vec<UnaryRange<T>>` by combining ranges with adjacent
+    /// [high](`UnaryRange::high`) and [low](`UnaryRange::low`) values
+    ///
+    /// Calling this before correctly sorting the vector (with [`DisjointRange::sort_ranges`])
+    /// will result in undesired behavior
+    pub fn meld_ranges_unchecked(ranges: &mut Vec<UnaryRange<T>>) {
         let mut i = 0;
         let mut l = ranges.len();
         while i + 1 < l {
@@ -414,6 +417,12 @@ where
                 i += 1;
             }
         }
+    }
+    /// Sort and meld the contents of a `Vec<UnaryRange<T>>` by combining ranges with
+    /// adjacent [high](`UnaryRange::high`) and [low](`UnaryRange::low`) values
+    pub fn meld_ranges(ranges: &mut Vec<UnaryRange<T>>) {
+        DisjointRange::sort_ranges(ranges);
+        DisjointRange::meld_ranges_unchecked(ranges);
     }
 }
 
@@ -469,7 +478,7 @@ mod tests {
             UnaryRange::new_unchecked(0, 9),
             UnaryRange::new_unchecked(10, 19),
         ];
-        DisjointRange::meld_ranges(&mut ranges);
+        DisjointRange::meld_ranges_unchecked(&mut ranges);
         assert_eq!(1, ranges.len());
         let UnaryRange { low, high } = ranges[0];
         assert_eq!(0, low);
@@ -482,7 +491,7 @@ mod tests {
             UnaryRange::new_unchecked(0, 9),
             UnaryRange::new_unchecked(11, 19),
         ];
-        DisjointRange::meld_ranges(&mut ranges);
+        DisjointRange::meld_ranges_unchecked(&mut ranges);
         assert_eq!(2, ranges.len());
         let UnaryRange { low, high } = ranges[0];
         assert_eq!(0, low);
@@ -498,7 +507,7 @@ mod tests {
             UnaryRange::new_unchecked(5, 9),
             UnaryRange::new_unchecked(11, 15),
         ];
-        DisjointRange::meld_ranges(&mut ranges);
+        DisjointRange::meld_ranges_unchecked(&mut ranges);
         assert_eq!(2, ranges.len());
         let UnaryRange { low, high } = ranges[0];
         assert_eq!(0, low);
@@ -514,7 +523,7 @@ mod tests {
             UnaryRange::new_unchecked(6, 10),
             UnaryRange::new_unchecked(11, 15),
         ];
-        DisjointRange::meld_ranges(&mut ranges);
+        DisjointRange::meld_ranges_unchecked(&mut ranges);
         assert_eq!(2, ranges.len());
         let UnaryRange { low, high } = ranges[0];
         assert_eq!(0, low);
@@ -530,7 +539,7 @@ mod tests {
             UnaryRange::new_unchecked(5, 10),
             UnaryRange::new_unchecked(11, 15),
         ];
-        DisjointRange::meld_ranges(&mut ranges);
+        DisjointRange::meld_ranges_unchecked(&mut ranges);
         assert_eq!(1, ranges.len());
         let UnaryRange { low, high } = ranges[0];
         assert_eq!(0, low);
